@@ -1,0 +1,1 @@
+g++ ./*.cpp -o fileCacheProxy -std=c++11 -I./ -lfdfsclient -lfastcommon -levent-2.0 -lpthread
