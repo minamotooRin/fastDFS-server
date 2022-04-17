@@ -12,15 +12,13 @@ else()
     add_definitions("-Wall -std=c++17 -O3") # 编译选项
 endif()
 
-###
-###-I./ -lfdfsclient -lfastcommon -levent-2.0 -lpthread
-###
-
 # 打印信息
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: " ${CMAKE_CURRENT_SOURCE_DIR})
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/event2
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/spdlog
 )
 link_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/libs
@@ -35,4 +33,4 @@ add_executable(main
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
 )
 
-target_link_libraries(main SPH)
+target_link_libraries(main fdfsclient fastcommon event-2.0 pthread)
