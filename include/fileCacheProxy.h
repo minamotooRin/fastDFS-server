@@ -15,6 +15,7 @@
 
 #include "configReader.h"
 #include "logger.h"
+#include "common.h"
 
 #include "event2/event.h"
 #include "event2/http.h"
@@ -24,26 +25,6 @@
 #include "fastdfs/client_func.h"
 #include "fastdfs/fdfs_global.h"
 #include "fastdfs/fdfs_client.h"
-
-#define SIGHUP     1ULL
-#define SIGINT     2ULL
-#define SIGQUIT    3ULL
-#define SIGTERM    15ULL
-
-#define PATH_LEN      256
-#define HTTP_BODY_LEN 2048
-
-#define ERR_NULL             100
-#define ERR_DO_NOT_EXIST     102
-#define ERR_PARAM            103
-#define ERR_NETWORK          104
-#define ERR_TRACKER          105
-#define ERR_EV_NEW           106
-
-#define HTTP_OK     200
-#define HTTP_200    HTTP_OK
-#define HTTP_400    400
-#define HTTP_503    503
 
 typedef void (*cb)(struct evhttp_request *, void *);
 
@@ -83,9 +64,9 @@ private:
     struct threadParam
     {
         int threadID;
+        TrackerServerInfo info;
         event_base *ev;
         evhttp* ev_listen;
-        TrackerServerInfo info;
         ~threadParam(){
             if(ev_listen)
             {
@@ -101,8 +82,7 @@ private:
 
     fileCacheProxy();
     static fileCacheProxy *_Instance;
-
-    int initLog();
+    
     static void httpd_handler(struct evhttp_request * req, void * arg);
     static void upload_handler(struct evhttp_request * req, void * arg);
     static void delete_handler(struct evhttp_request * req, void * arg);
@@ -116,6 +96,8 @@ private:
     static constexpr const char* FC_LOGGER_NAME      = "fileCacheProxy";
     static constexpr const char* PROCESS_LOGGER_NAME = "process";
 
+    static constexpr int MAX_CONNECTION_TEST = 16;
+
     std::map<std::string, cb> mPath2Handle;
 
     int isReady;
@@ -128,7 +110,7 @@ private:
     char mFclogFile[PATH_LEN];
     char mProclogFile[PATH_LEN];
 
-    fixed_thread_pool *mThreadPool;
+    threadpool *mThreadPool;
 
     std::shared_ptr<spdlog::logger> m_fc_rotating_logger;
     std::shared_ptr<spdlog::logger> m_process_rotating_logger;
