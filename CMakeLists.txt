@@ -24,13 +24,8 @@ link_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/libs
 )
 
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/lib SRC_LIST)
-add_library(SPH SHARED
-    ${SRC_LIST}
-)
-
 add_executable(main
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
 )
 
-target_link_libraries(main fdfsclient fastcommon event-2.0 pthread)
+target_link_libraries(main fdfsclient fastcommon event)
