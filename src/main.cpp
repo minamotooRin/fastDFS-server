@@ -13,15 +13,6 @@ int main(int argc, const char **argv, const char **envp)
   signal(SIGQUIT, signal_handler);
   signal(SIGTERM, signal_handler);
 
-  pid_t fpid = fork();
-  if ( fpid < 0 )
-  {
-    perror("fork failed");
-    exit(1);
-  }
-  if ( fpid > 0 )
-    exit(0);
-
   int iRet = fileCacheProxy::getInstance()->init();
   if( iRet )
   {
@@ -31,7 +22,6 @@ int main(int argc, const char **argv, const char **envp)
 
   std::cout << "start service..." << std::endl;
   fileCacheProxy::getInstance()->startService();
-  exit(0); // why ？？？
 
   return 0;
 }
