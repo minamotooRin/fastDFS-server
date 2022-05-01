@@ -51,7 +51,7 @@ int Config::Load()
 	if (! fConfig.is_open())
 	{ 
 		std::cout << "Error opening file" << std::endl; 
-		return FILE_OPEN_FAILED; 
+		return ERR_FILE_OPEN_FAILED; 
 	}
 
 	char buffer[MAX_LINE];

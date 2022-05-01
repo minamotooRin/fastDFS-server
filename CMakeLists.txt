@@ -24,8 +24,18 @@ link_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/libs
 )
 
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC_LIST)
 add_executable(main
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+    ${SRC_LIST}
 )
+
+IF (WIN32)
+	MESSAGE(STATUS "Now is windows")
+ELSEIF (APPLE)
+	MESSAGE(STATUS "Now is Apple systens.")
+ELSEIF (UNIX)
+	MESSAGE(STATUS "Now is UNIX-like OS's.")
+    target_link_libraries(main pthread)
+ENDIF ()
 
 target_link_libraries(main fdfsclient fastcommon event)

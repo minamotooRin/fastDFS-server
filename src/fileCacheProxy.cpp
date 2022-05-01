@@ -45,17 +45,17 @@ int fileCacheProxy::init()
   char *endPos = strrchr(mWorkDir, '/');
   endPos[1] = 0;
   
-  sprintf(mlogDir, "%s/log/", mWorkDir);
-  sprintf(mFclogFile, "%s/log/fileCacheProxy.log", mWorkDir);
-  sprintf(mProclogFile, "%s/log/process.log", mWorkDir);
-  sprintf(mRecordDir, "%s/records/", mWorkDir);
+  mlogDir       = string_format("%s/log/", mWorkDir);
+  mFclogFile    = string_format("%s/log/fileCacheProxy.log", mWorkDir);
+  mProclogFile  = string_format("%s/log/process.log", mWorkDir);
+  mRecordDir    = string_format("%s/records/", mWorkDir);
 
-  if(mkdir(mlogDir, PRIVILEAGE_644))
+  if(mkdir(mlogDir.c_str(), PRIVILEAGE_644))
   {
     perror("mkdir for log directory failed.");
     return ERR_DIR;
   }
-  if(mkdir(mRecordDir, PRIVILEAGE_644))
+  if(mkdir(mRecordDir.c_str(), PRIVILEAGE_644))
   {
     perror("mkdir for record diretory failed.");
     return ERR_DIR;
@@ -69,10 +69,10 @@ int fileCacheProxy::init()
 
   spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e][%t][%l] %v");
 
-  m_fc_rotating_logger = spdlog::rotating_logger_mt(FC_LOGGER_NAME, mFclogFile, 1024 * 1024 * logFileSize, logFileBkupNum); \
+  m_fc_rotating_logger = spdlog::rotating_logger_mt(FC_LOGGER_NAME, mFclogFile.c_str(), 1024 * 1024 * logFileSize, logFileBkupNum); \
   SPDLOG_LOGGER_INFO(m_fc_rotating_logger, "LOGGER INITIALISZING...");
 
-  m_process_rotating_logger = spdlog::rotating_logger_mt(PROCESS_LOGGER_NAME, mProclogFile, 1024 * 1024 * logFileSize, logFileBkupNum); \
+  m_process_rotating_logger = spdlog::rotating_logger_mt(PROCESS_LOGGER_NAME, mProclogFile.c_str(), 1024 * 1024 * logFileSize, logFileBkupNum); \
   SPDLOG_LOGGER_INFO(m_process_rotating_logger, "LOGGER INITIALISZING...");
 
   /*=======================================
@@ -317,8 +317,7 @@ void fileCacheProxy::fileinfo_handler(struct evhttp_request * req, void * arg)
   }
 
   FDFSFileInfo FileInfo;
-  int iRet = fdfs_get_file_info1(fileID, &FileInfo);
-  if ( iRet )
+  if ( fdfs_get_file_info1(fileID, &FileInfo) )
   {
     return evhttp_send_reply(req, HTTP_400, "Bad Request", nullptr);
   }
@@ -336,13 +335,11 @@ void fileCacheProxy::fileinfo_handler(struct evhttp_request * req, void * arg)
     sTime,
     FileInfo.file_size,
     FileInfo.crc32);
-  char slen[16] = {0};
-  snprintf(slen, sizeof(slen), "%d", strlen(replyContext));
-
+    
   struct evbuffer *buff = evbuffer_new();
   evbuffer_add_printf(buff, "%s", replyContext);
 
-  evhttp_add_header(headers, "Content-Length", slen);
+  evhttp_add_header(headers, "Content-Length", std::to_string(strlen(replyContext)).c_str());
   evhttp_add_header(headers, "Content-Type", "fileinfo");
 
   evhttp_send_reply(req, HTTP_OK, "OK", buff);

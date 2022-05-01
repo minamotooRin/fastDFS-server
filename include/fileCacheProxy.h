@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 
 #include "configReader.h"
+#include "utilities.h"
 #include "logger.h"
 #include "common.h"
 
@@ -105,13 +106,13 @@ private:
     pid_t pid;
 
     char mWorkDir[PATH_LEN];
-    char mlogDir[PATH_LEN];
-    char mRecordDir[PATH_LEN];
+    std::string mlogDir;
+    std::string mRecordDir;
 
-    char mFclogFile[PATH_LEN];
-    char mProclogFile[PATH_LEN];
+    std::string mFclogFile;
+    std::string mProclogFile;
 
-    threadpool *mThreadPool;
+    std::threadpool *mThreadPool;
 
     std::shared_ptr<spdlog::logger> m_fc_rotating_logger;
     std::shared_ptr<spdlog::logger> m_process_rotating_logger;

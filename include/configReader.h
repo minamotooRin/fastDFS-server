@@ -8,9 +8,9 @@
 #include <fstream>
 #include <algorithm>
 #include <stdlib.h>
-#include <string.h>
+#include <cstring>
 
-#define FILE_OPEN_FAILED 1
+#include "common.h"
 
 size_t split(const std::string &s, std::vector<std::string> &tokens, const char delim = ' ');
 
