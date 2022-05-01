@@ -29,8 +29,9 @@ int main(int argc, const char **argv, const char **envp)
     return 0;
   }
 
-  std::cout << "start service ..." << std::endl;
+  std::cout << "start service..." << std::endl;
   fileCacheProxy::getInstance()->startService();
+  exit(0); // why ？？？
 
   return 0;
 }

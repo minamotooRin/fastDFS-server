@@ -86,9 +86,8 @@ std::string Config::getValue(std::string &Key)
 
 std::string Config::getValue(const char *Key)
 {
-	std::string strKey;
 	std::string ans;
-	std::map<std::string, std::string>::iterator it = mItems.find(strKey);
+	std::map<std::string, std::string>::iterator it = mItems.find(std::string(Key));
     if (it != mItems.end())
     {
         ans = it->second;

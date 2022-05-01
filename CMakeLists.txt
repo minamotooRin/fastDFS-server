@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.4.1)
 project(fileCacheProxy)
 
-# SET(DEBUG_MODE TRUE)
+SET(DEBUG_MODE TRUE)
 
 if(DEBUG_MODE)
     message(STATUS "===Compiling in DEBUG mode...===" )
-    add_definitions(-DDEBUG)
     add_definitions("-Wall -std=c++17 -O0 -g") # 编译选项
 else()
     message(STATUS "===Compiling in Release mode...===" )

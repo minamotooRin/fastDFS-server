@@ -10,8 +10,8 @@ fileCacheProxy::fileCacheProxy()
   isReady = false;
 
   mPath2Handle["/fileinfo"] = fileinfo_handler;
-  mPath2Handle["/upload"] = upload_handler;
-  mPath2Handle["/delete"] = delete_handler;
+  mPath2Handle["/upload"]   = upload_handler;
+  mPath2Handle["/delete"]   = delete_handler;
 
 }
 
@@ -52,13 +52,11 @@ int fileCacheProxy::init()
 
   if(mkdir(mlogDir.c_str(), PRIVILEAGE_644))
   {
-    perror("mkdir for log directory failed.");
-    return ERR_DIR;
+    perror("mkdir for log directory");
   }
   if(mkdir(mRecordDir.c_str(), PRIVILEAGE_644))
   {
-    perror("mkdir for record diretory failed.");
-    return ERR_DIR;
+    perror("mkdir for record diretory");
   }
 
   /*=======================================
@@ -69,11 +67,13 @@ int fileCacheProxy::init()
 
   spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e][%t][%l] %v");
 
-  m_fc_rotating_logger = spdlog::rotating_logger_mt(FC_LOGGER_NAME, mFclogFile.c_str(), 1024 * 1024 * logFileSize, logFileBkupNum); \
-  SPDLOG_LOGGER_INFO(m_fc_rotating_logger, "LOGGER INITIALISZING...");
+  m_fc_rotating_logger = spdlog::rotating_logger_mt(FC_LOGGER_NAME, mFclogFile.c_str(), 1024 * 1024 * logFileSize, logFileBkupNum); 
+  m_fc_rotating_logger->flush_on(spdlog::level::info);
+  SPDLOG_LOGGER_INFO(m_fc_rotating_logger, "LOGGER INITIALIZED.");
 
   m_process_rotating_logger = spdlog::rotating_logger_mt(PROCESS_LOGGER_NAME, mProclogFile.c_str(), 1024 * 1024 * logFileSize, logFileBkupNum); \
-  SPDLOG_LOGGER_INFO(m_process_rotating_logger, "LOGGER INITIALISZING...");
+  m_process_rotating_logger->flush_on(spdlog::level::info);
+  SPDLOG_LOGGER_INFO(m_process_rotating_logger, "LOGGER INITIALIZED.");
 
   /*=======================================
 
@@ -201,7 +201,7 @@ int fileCacheProxy::init()
   
   if ( fdfs_client_init(mClientConfPath) )
   {
-    SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"tracker group init failed! service exit!");
+    SPDLOG_LOGGER_ERROR(m_fc_rotating_logger,"tracker group init failed! service exit!");
     return ERR_TRACKER;
   }
 
@@ -260,7 +260,12 @@ int fileCacheProxy::startService(void)
     threadParams.push_back(cbParam);
 
     // It's also OK to use evhttp_bind_socket to get listenfd directly
-    if ( evhttp_accept_socket(ev_listen, listenfd) ) return ERR_EV_NEW;
+    if ( evhttp_accept_socket(ev_listen, listenfd) ) 
+    {
+      evhttp_free(ev_listen);
+      event_base_free(ev);
+      return ERR_EV_NEW;
+    }
 
     evhttp_set_gencb(ev_listen, httpd_handler, cbParam);
     for(auto &it : mPath2Handle)
@@ -276,6 +281,7 @@ int fileCacheProxy::startService(void)
   {
     sleep(1u); // s
   }
+  SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Service exited.");
 
   return 0;
 }
@@ -283,9 +289,13 @@ int fileCacheProxy::startService(void)
 int fileCacheProxy::signal_handle(unsigned int signum)
 {
   SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Receive signal {}", signum );
-  if ( signum <= 0xF && (1LL << signum) & 0x800E )
+  if ( signum == SIGHUP ||
+       signum == SIGINT ||
+       signum == SIGQUIT ||
+       signum == SIGTERM )
   {
     isReady = false;
+    SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Ready to exit..." );
   }
   return 0;
 }
