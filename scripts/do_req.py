@@ -2,7 +2,6 @@ import requests
 
 register_url = "http://172.17.0.4:9999/fileinfo"
 
-# 添加请求头，需要就传
 header = {
     "Content-Type": "application/json",
     "FileID" : "group1/M00/00/00/fwAAAWJuQzWAc53lAABEiaWfr5k08874.h"
