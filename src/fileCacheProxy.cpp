@@ -20,6 +20,21 @@ fileCacheProxy* fileCacheProxy::getInstance()
     return fileCacheProxy::_Instance;
 }
 
+int fileCacheProxy::signal_handle(unsigned int signum)
+{
+  SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Receive signal {}", signum );
+  if ( signum == SIGHUP ||
+       signum == SIGINT ||
+       signum == SIGQUIT ||
+       signum == SIGTERM )
+  {
+    isReady = false;
+    SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Ready to exit..." );
+  }
+  return 0;
+}
+
+
 bool fileCacheProxy::doFileExists(string& name) {
     ifstream f(name.c_str());
     return f.good();
@@ -45,10 +60,11 @@ int fileCacheProxy::init()
   char *endPos = strrchr(mWorkDir, '/');
   endPos[1] = 0;
   
-  mlogDir       = string_format("%s/log/", mWorkDir);
-  mFclogFile    = string_format("%s/log/fileCacheProxy.log", mWorkDir);
-  mProclogFile  = string_format("%s/log/process.log", mWorkDir);
+  mlogDir       = string_format("%s/log", mWorkDir);
+  mFclogFile    = string_format("%s/fileCacheProxy.log", mlogDir.c_str());
+  
   mRecordDir    = string_format("%s/records/", mWorkDir);
+  mProclogFile  = string_format("%s/process.log", mRecordDir.c_str());
 
   if(mkdir(mlogDir.c_str(), PRIVILEAGE_644))
   {
@@ -223,13 +239,15 @@ int fileCacheProxy::startService(void)
 
   for ( int i = 0; ThreadCount > i; ++i )
   {
-    TrackerServerInfo info = {0};
+    TrackerServerInfo * info = new TrackerServerInfo;
+    ConnectionInfo * connectResult;
+    int err_no;
     int testNum = 0;
     while ( testNum < MAX_CONNECTION_TEST )
     {
-      if ( info.count > 0 ) tracker_disconnect_server(&info);
-      ConnectionInfo *connectResult = tracker_get_connection_r( &info, &err_no);
-      if ( info.count > 0 ) break;
+      if ( info->count > 0 ) tracker_disconnect_server(info);
+      connectResult = tracker_get_connection_r( info, &err_no);
+      if ( info->count > 0 ) break;
       sleep(1u);
       ++testNum;
       SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Thread {} trying {} time ...", i, testNum);
@@ -252,11 +270,7 @@ int fileCacheProxy::startService(void)
       continue; 
     }
 
-    threadParam *cbParam  = new threadParam;
-    cbParam->threadID     = i;
-    cbParam->ev           = ev;
-    cbParam->ev_listen    = ev_listen;
-    cbParam->info         = info;
+    threadParam *cbParam  = new threadParam(i, ev, ev_listen, info, connectResult);
     threadParams.push_back(cbParam);
 
     // It's also OK to use evhttp_bind_socket to get listenfd directly
@@ -286,21 +300,6 @@ int fileCacheProxy::startService(void)
   return 0;
 }
 
-int fileCacheProxy::signal_handle(unsigned int signum)
-{
-  SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Receive signal {}", signum );
-  if ( signum == SIGHUP ||
-       signum == SIGINT ||
-       signum == SIGQUIT ||
-       signum == SIGTERM )
-  {
-    isReady = false;
-    SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Ready to exit..." );
-  }
-  return 0;
-}
-
-
 void fileCacheProxy::httpd_handler(struct evhttp_request * req, void * arg)
 {
   evhttp_send_reply(req, HTTP_400, "Bad Request", nullptr);
@@ -308,8 +307,55 @@ void fileCacheProxy::httpd_handler(struct evhttp_request * req, void * arg)
 }
 void fileCacheProxy::upload_handler(struct evhttp_request * req, void * arg)
 {
-  
+  // Process header 
+  struct evkeyvalq *headers = evhttp_request_get_input_headers(req);
+  const char * file_ext_name = evhttp_find_header(headers, "FileExt");
+	FDFSMetaData meta_list[MAX_FDFSMetaData_CNT];
+	int meta_count = 0;
+
+  // Process body
+  evbuffer * buf = evhttp_request_get_input_buffer(req);
+  if ( buf == nullptr )
+  {
+    return evhttp_send_reply(req, HTTP_400, "Bad Request", nullptr);
+  }
+  size_t file_size = evbuffer_get_length(buf);
+  char * file_content = (char *)buf;
+
+  // Setup connection between storageServer
+  threadParam * cbParam = (threadParam * )arg;
+  ConnectionInfo * pTrackerServer = cbParam->connectResult;
+
+	ConnectionInfo storageServer;
+	char group_name[FDFS_GROUP_NAME_MAX_LEN + 1];
+	int store_path_index;
+  int result = tracker_query_storage_store( pTrackerServer, &storageServer, group_name, &store_path_index);
+  if ( result != 0)
+  {
+    return evhttp_send_reply(req, HTTP_503, "Service Temporarily Unavailable", nullptr);
+  }
+
+  ConnectionInfo * pStorageServer = tracker_make_connection(&storageServer, &result);
+  if(pStorageServer == nullptr)
+  {
+    return evhttp_send_reply(req, HTTP_503, "Service Temporarily Unavailable", nullptr);
+  }
+
+  // Uploading file;
+
+  char remote_filename[PATH_LEN];
+  result = storage_upload_by_filebuff(pTrackerServer, \
+    pStorageServer, store_path_index, \
+    file_content, file_size, file_ext_name, \
+    meta_list, meta_count, \
+    group_name, remote_filename);
+  if(result != 0)
+  {
+    return evhttp_send_reply(req, HTTP_503, "Service Temporarily Unavailable", nullptr);
+  }
+
   evhttp_send_reply(req, HTTP_200, "OK", nullptr);
+
   return ;
 }
 void fileCacheProxy::delete_handler(struct evhttp_request * req, void * arg)
@@ -357,4 +403,11 @@ void fileCacheProxy::fileinfo_handler(struct evhttp_request * req, void * arg)
   evbuffer_free(buff);
 
   return ;
+}
+
+fileCacheProxy::threadParam::threadParam
+(int _threadID, event_base * _ev, evhttp * _ev_listen, TrackerServerInfo * _info, ConnectionInfo * _connectResult ):
+threadID(_threadID), ev(_ev), ev_listen(_ev_listen), info(_info), connectResult(_connectResult)
+{
+
 }

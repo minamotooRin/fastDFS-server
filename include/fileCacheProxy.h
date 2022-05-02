@@ -66,10 +66,19 @@ private:
     struct threadParam
     {
         int threadID;
-        TrackerServerInfo info;
-        event_base *ev;
-        evhttp* ev_listen;
+        event_base * ev;
+        evhttp * ev_listen;
+
+        TrackerServerInfo * info;
+        ConnectionInfo * connectResult;
+
+        threadParam(int _threadID, event_base * _ev, evhttp * _ev_listen, TrackerServerInfo * _info, ConnectionInfo * _connectResult );
+
         ~threadParam(){
+            if(info)
+            {
+                delete info;
+            }
             if(ev_listen)
             {
                 evhttp_free(ev_listen);
@@ -99,29 +108,27 @@ private:
     static constexpr const char* PROCESS_LOGGER_NAME = "process";
 
     static constexpr int MAX_CONNECTION_TEST = 16;
-
-    std::map<std::string, cb> mPath2Handle;
+    static constexpr int MAX_FDFSMetaData_CNT = 32;
 
     int isReady;
     pid_t pid;
-
     char mWorkDir[PATH_LEN];
-    std::string mlogDir;
-    std::string mRecordDir;
-
-    std::string mFclogFile;
-    std::string mProclogFile;
-
-    std::threadpool *mThreadPool;
-
-    std::shared_ptr<spdlog::logger> m_fc_rotating_logger;
-    std::shared_ptr<spdlog::logger> m_process_rotating_logger;
-
-    std::vector<threadParam *> threadParams;
-
-    int err_no;
 
     int listenfd;
+    std::map<std::string, cb> mPath2Handle;
+
+    std::threadpool *mThreadPool;
+    std::vector<threadParam *> threadParams;
+
+    // Logger
+    std::string mlogDir;
+    std::string mFclogFile;
+    std::shared_ptr<spdlog::logger> m_fc_rotating_logger;
+
+    // FDFS logger
+    std::string mRecordDir;
+    std::string mProclogFile;
+    std::shared_ptr<spdlog::logger> m_process_rotating_logger;
 
     // Load from config
     std::string localhost;
@@ -129,6 +136,7 @@ private:
     int ThreadCount;
     int expiredays;
     char mClientConfPath[PATH_LEN];
+
 };
 
 
