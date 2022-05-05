@@ -1,0 +1,1 @@
+{"mobile_phone": "15612345678", "pwd": "Test1234", "type": 0}

@@ -12,7 +12,7 @@ fileCacheProxy::fileCacheProxy()
   mPath2Handle["/fileinfo"] = fileinfo_handler;
   mPath2Handle["/upload"]   = upload_handler;
   mPath2Handle["/delete"]   = delete_handler;
-
+  
 }
 
 fileCacheProxy* fileCacheProxy::getInstance()
@@ -23,14 +23,20 @@ fileCacheProxy* fileCacheProxy::getInstance()
 int fileCacheProxy::signal_handle(unsigned int signum)
 {
   SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Receive signal {}", signum );
-  if ( signum == SIGHUP ||
-       signum == SIGINT ||
-       signum == SIGQUIT ||
-       signum == SIGTERM )
+  switch (signum)
   {
+  case SIGHUP:
+  case SIGINT:
+  case SIGQUIT:
+  case SIGTERM:
     isReady = false;
     SPDLOG_LOGGER_INFO(m_fc_rotating_logger,"Ready to exit..." );
+    break;
+  
+  default:
+    break;
   }
+
   return 0;
 }
 
@@ -240,6 +246,7 @@ int fileCacheProxy::startService(void)
   for ( int i = 0; ThreadCount > i; ++i )
   {
     TrackerServerInfo * info = new TrackerServerInfo;
+    memset(info, 0, sizeof(TrackerServerInfo));
     ConnectionInfo * connectResult;
     int err_no;
     int testNum = 0;
@@ -270,7 +277,7 @@ int fileCacheProxy::startService(void)
       continue; 
     }
 
-    threadParam *cbParam  = new threadParam(i, ev, ev_listen, info, connectResult);
+    threadParam * cbParam  = new threadParam(i, ev, ev_listen, info, connectResult);
     threadParams.push_back(cbParam);
 
     // It's also OK to use evhttp_bind_socket to get listenfd directly
@@ -310,7 +317,7 @@ void fileCacheProxy::upload_handler(struct evhttp_request * req, void * arg)
   // Process header 
   struct evkeyvalq *headers = evhttp_request_get_input_headers(req);
   const char * file_ext_name = evhttp_find_header(headers, "FileExt");
-	FDFSMetaData meta_list[MAX_FDFSMetaData_CNT];
+	FDFSMetaData meta_list[MAX_FDFSMetaData_CNT] = {0};
 	int meta_count = 0;
 
   // Process body
@@ -320,15 +327,16 @@ void fileCacheProxy::upload_handler(struct evhttp_request * req, void * arg)
     return evhttp_send_reply(req, HTTP_400, "Bad Request", nullptr);
   }
   size_t file_size = evbuffer_get_length(buf);
-  char * file_content = (char *)buf;
+  char * file_content = new char[file_size];
+  evbuffer_copyout(buf, file_content, file_size);
 
   // Setup connection between storageServer
   threadParam * cbParam = (threadParam * )arg;
   ConnectionInfo * pTrackerServer = cbParam->connectResult;
 
-	ConnectionInfo storageServer;
-	char group_name[FDFS_GROUP_NAME_MAX_LEN + 1];
-	int store_path_index;
+	ConnectionInfo storageServer = {0};
+	char group_name[FDFS_GROUP_NAME_MAX_LEN + 1] = {0};
+	int store_path_index = 0;
   int result = tracker_query_storage_store( pTrackerServer, &storageServer, group_name, &store_path_index);
   if ( result != 0)
   {
@@ -342,8 +350,7 @@ void fileCacheProxy::upload_handler(struct evhttp_request * req, void * arg)
   }
 
   // Uploading file;
-
-  char remote_filename[PATH_LEN];
+  char remote_filename[PATH_LEN] = {0};
   result = storage_upload_by_filebuff(pTrackerServer, \
     pStorageServer, store_path_index, \
     file_content, file_size, file_ext_name, \
@@ -354,7 +361,10 @@ void fileCacheProxy::upload_handler(struct evhttp_request * req, void * arg)
     return evhttp_send_reply(req, HTTP_503, "Service Temporarily Unavailable", nullptr);
   }
 
-  evhttp_send_reply(req, HTTP_200, "OK", nullptr);
+  evbuffer * resp_body = evbuffer_new();
+  evbuffer_add_printf(resp_body, "%s/%s", group_name, remote_filename);
+  evhttp_send_reply(req, HTTP_200, "OK", resp_body);
+  evbuffer_free(resp_body);
 
   return ;
 }
@@ -398,7 +408,7 @@ void fileCacheProxy::fileinfo_handler(struct evhttp_request * req, void * arg)
   evhttp_add_header(headers, "Content-Length", std::to_string(strlen(replyContext)).c_str());
   evhttp_add_header(headers, "Content-Type", "fileinfo");
 
-  evhttp_send_reply(req, HTTP_OK, "OK", buff);
+  evhttp_send_reply(req, HTTP_OK, "OK", nullptr);
 
   evbuffer_free(buff);
 
