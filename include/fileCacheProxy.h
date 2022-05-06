@@ -2,31 +2,30 @@
 #define _FILE_CACHE_PROXY_H
 
 #include <vector>
-
+#include <future>
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
+
 #include <sys/stat.h> 
 #include <sys/types.h>
-
 #include <sys/socket.h>
 #include <arpa/inet.h> 
 #include <netinet/in.h>
-
-#include "configReader.h"
-#include "utilities.h"
-#include "logger.h"
-#include "common.h"
 
 #include "event.h"
 #include "http.h"
 #include "buffer.h"
 
-#include "thread_pool.h"
-
 #include "fastdfs/client_func.h"
 #include "fastdfs/fdfs_global.h"
 #include "fastdfs/fdfs_client.h"
+
+#include "configReader.h"
+#include "utilities.h"
+#include "logger.h"
+#include "common.h"
+#include "thread_pool.h"
 
 typedef void (*cb)(struct evhttp_request *, void *);
 
@@ -45,15 +44,7 @@ public:
     };
     static Garbo m_garbo;
 
-    ~fileCacheProxy()
-    {
-        close(listenfd);
-        for(auto it : threadParams) 
-        {
-          delete it;
-        }
-        delete(mThreadPool);
-    }
+    ~fileCacheProxy();
 
     int init();
     int startService(void);
@@ -66,6 +57,8 @@ private:
     struct threadParam
     {
         int threadID;
+        std::future<int> retval ;
+
         event_base * ev;
         evhttp * ev_listen;
 
@@ -73,22 +66,7 @@ private:
         ConnectionInfo * connectResult;
 
         threadParam(int _threadID, event_base * _ev, evhttp * _ev_listen, TrackerServerInfo * _info, ConnectionInfo * _connectResult );
-
-        ~threadParam(){
-            if(info)
-            {
-                delete info;
-            }
-            if(ev_listen)
-            {
-                evhttp_free(ev_listen);
-            }
-            if(ev)
-            {
-                event_base_loopbreak(ev);
-                event_base_free(ev);
-            }
-        }
+        ~threadParam();
     };
 
     fileCacheProxy();

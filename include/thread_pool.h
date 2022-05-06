@@ -33,9 +33,9 @@ public:
 		_run=false;
 		_task_cv.notify_all(); // 唤醒所有线程执行
 		for (thread& thread : _pool) {
-			//thread.detach(); // 让线程“自生自灭”
-			if(thread.joinable())
-				thread.join(); // 等待任务结束， 前提：线程一定会执行完
+			thread.detach(); // 让线程“自生自灭”
+			// if(thread.joinable())
+			// 	thread.join(); // 等待任务结束， 前提：线程一定会执行完
 		}
 	}
 
