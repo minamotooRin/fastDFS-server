@@ -407,7 +407,7 @@ void fileCacheProxy::fileinfo_handler(struct evhttp_request * req, void * arg)
   const char *fileID = evhttp_find_header(headers, "FileID");
   if ( fileID == nullptr )
   {
-    evhttp_send_reply(req, HTTP_400, "Bad Request", nullptr);
+    evhttp_send_reply(req, HTTP_400, "FileID is NULL", nullptr);
     return ;
   }
 
@@ -431,14 +431,16 @@ void fileCacheProxy::fileinfo_handler(struct evhttp_request * req, void * arg)
     sTime,
     FileInfo.file_size,
     FileInfo.crc32);
+
+  struct evkeyvalq *response_headers = evhttp_request_get_output_headers(req);
     
   struct evbuffer *buff = evbuffer_new();
   evbuffer_add_printf(buff, "%s", replyContext);
 
-  evhttp_add_header(headers, "Content-Length", std::to_string(strlen(replyContext)).c_str());
-  evhttp_add_header(headers, "Content-Type", "fileinfo");
+  evhttp_add_header(response_headers, "Content-Length", std::to_string(strlen(replyContext)).c_str());
+  evhttp_add_header(response_headers, "Content-Type", "XML");
 
-  evhttp_send_reply(req, HTTP_OK, "OK", nullptr);
+  evhttp_send_reply(req, HTTP_OK, "OK", buff);
 
   evbuffer_free(buff);
 
@@ -460,7 +462,7 @@ fileCacheProxy::threadParam::threadParam
 (int _threadID, event_base * _ev, evhttp * _ev_listen, TrackerServerInfo * _info, ConnectionInfo * _connectResult ):
 threadID(_threadID), ev(_ev), ev_listen(_ev_listen), info(_info), connectResult(_connectResult)
 {
-
+  
 }
 
 fileCacheProxy::threadParam::~threadParam()
