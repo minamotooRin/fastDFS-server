@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 project(fileCacheProxy)
 
-SET(DEBUG_MODE TRUE)
+# SET(DEBUG_MODE TRUE)
 
 if(DEBUG_MODE)
     message(STATUS "===Compiling in DEBUG mode...===" )
