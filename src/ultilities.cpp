@@ -17,3 +17,19 @@ std::string string_format(const std::string fmt_str, ...) {
     }
     return std::string(formatted.get());
 }
+
+std::string get_time_now()
+{
+    time_t timep;
+    time (&timep);
+    char sTime[64];
+    strftime(sTime, sizeof(sTime), "%Y-%m-%d %H:%M:%S",localtime(&timep) );
+
+    return std::string(sTime);
+}
+
+bool doFileExists(std::string& name)
+{
+    std::ifstream f(name.c_str());
+    return f.good();
+}

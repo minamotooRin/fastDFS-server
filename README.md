@@ -17,4 +17,6 @@ nohup ./build/main 2>&1 &
 
 ## TO DO
 
+- Recording receiving time.
+- batch deleting file.
 - when fdfs is logging, buffer overflow will be detected.

@@ -4,7 +4,6 @@
 #include <vector>
 #include <future>
 #include <signal.h>
-#include <stdio.h>
 #include <unistd.h>
 
 #include <sys/stat.h> 
@@ -16,6 +15,8 @@
 #include "event.h"
 #include "http.h"
 #include "buffer.h"
+
+#include "json.hpp"
 
 #include "fastdfs/client_func.h"
 #include "fastdfs/fdfs_global.h"
@@ -49,8 +50,6 @@ public:
     int init();
     int startService(void);
     int signal_handle(unsigned int signum);
-
-    static bool doFileExists(std::string& name);
 
 private:
 

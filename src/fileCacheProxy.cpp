@@ -1,7 +1,5 @@
 #include "fileCacheProxy.h"
 
-using namespace std;
-
 fileCacheProxy::Garbo fileCacheProxy::m_garbo;
 fileCacheProxy *fileCacheProxy::_Instance = new fileCacheProxy();
 
@@ -38,12 +36,6 @@ int fileCacheProxy::signal_handle(unsigned int signum)
   }
 
   return 0;
-}
-
-
-bool fileCacheProxy::doFileExists(string& name) {
-    ifstream f(name.c_str());
-    return f.good();
 }
 
 int fileCacheProxy::init()
@@ -110,7 +102,7 @@ int fileCacheProxy::init()
     return ERR_DO_NOT_EXIST;
   }
 
-  string strVal = myConfig.getValue("localhost");
+  std::string strVal = myConfig.getValue("localhost");
   if ( strVal.empty() )
   {
     SPDLOG_LOGGER_ERROR(m_fc_rotating_logger,"----Config->LocalHost Read Error! service exit!");
@@ -213,7 +205,7 @@ int fileCacheProxy::init()
 
   =========================================*/
 
-  mThreadPool = new threadpool(ThreadCount);
+  mThreadPool = new std::threadpool(ThreadCount);
 
   /*=======================================
 
@@ -367,8 +359,17 @@ void fileCacheProxy::upload_handler(struct evhttp_request * req, void * arg)
     return ;
   }
 
+  nlohmann::json j = nlohmann::json::object();
+  j["FileID"] = string_format("%s/%s", group_name, remote_filename);
+  std::string j_str = j.dump();
+
   evbuffer * resp_body = evbuffer_new();
-  evbuffer_add_printf(resp_body, "%s/%s", group_name, remote_filename);
+  evbuffer_add_printf(resp_body, "%s", j_str.c_str());
+
+  struct evkeyvalq *response_headers = evhttp_request_get_output_headers(req);
+  evhttp_add_header(response_headers, "Content-Length", std::to_string(j_str.size()).c_str());
+  evhttp_add_header(response_headers, "Content-Type", "application/json");
+
   evhttp_send_reply(req, HTTP_200, "OK", resp_body);
   evbuffer_free(resp_body);
 
@@ -380,7 +381,7 @@ void fileCacheProxy::delete_handler(struct evhttp_request * req, void * arg)
   const char *fileID = evhttp_find_header(headers, "FileID");
   if ( fileID == nullptr )
   {
-    evhttp_send_reply(req, HTTP_400, "Bad Request", nullptr);
+    evhttp_send_reply(req, HTTP_400, "FileID is NULL", nullptr);
     return ;
   }
 
@@ -396,6 +397,16 @@ void fileCacheProxy::delete_handler(struct evhttp_request * req, void * arg)
     evbuffer_free(resp_body);
     return ;
 	}
+
+  nlohmann::json j = nlohmann::json::object();
+  std::string j_str = j.dump();
+
+  evbuffer * resp_body = evbuffer_new();
+  evbuffer_add_printf(resp_body, "%s", j_str.c_str());
+
+  struct evkeyvalq *response_headers = evhttp_request_get_output_headers(req);
+  evhttp_add_header(response_headers, "Content-Length", std::to_string(j_str.size()).c_str());
+  evhttp_add_header(response_headers, "Content-Type", "application/json");
 
   evhttp_send_reply(req, HTTP_200, "OK", nullptr);
 
@@ -418,30 +429,20 @@ void fileCacheProxy::fileinfo_handler(struct evhttp_request * req, void * arg)
     return ;
   }
 
-  time_t timep;
-  time (&timep);
-  char sTime[64];
-  strftime(sTime, sizeof(sTime), "%Y-%m-%d %H:%M:%S",localtime(&timep) );
-
-  char replyContext[HTTP_BODY_LEN] = {0};
-  snprintf(
-    replyContext,
-    HTTP_BODY_LEN,
-    "<FileInfo><CreateTime>%s</CreateTime><FileSize>%ld</FileSize><FileCrc32>%d</FileCrc32></FileInfo>",
-    sTime,
-    FileInfo.file_size,
-    FileInfo.crc32);
-
-  struct evkeyvalq *response_headers = evhttp_request_get_output_headers(req);
+  nlohmann::json j = nlohmann::json::object();
+  j["FileInfo"]["CreateTime"] = get_time_now();;
+  j["FileInfo"]["FileSize"]   = FileInfo.file_size;
+  j["FileInfo"]["FileCrc32"]  = FileInfo.crc32;
+  std::string j_str = j.dump();
     
   struct evbuffer *buff = evbuffer_new();
-  evbuffer_add_printf(buff, "%s", replyContext);
+  evbuffer_add_printf(buff, "%s", j_str.c_str());
 
-  evhttp_add_header(response_headers, "Content-Length", std::to_string(strlen(replyContext)).c_str());
-  evhttp_add_header(response_headers, "Content-Type", "XML");
+  struct evkeyvalq *response_headers = evhttp_request_get_output_headers(req);
+  evhttp_add_header(response_headers, "Content-Length", std::to_string(j_str.size()).c_str());
+  evhttp_add_header(response_headers, "Content-Type", "application/json");
 
   evhttp_send_reply(req, HTTP_OK, "OK", buff);
-
   evbuffer_free(buff);
 
   return ;
@@ -474,8 +475,8 @@ fileCacheProxy::threadParam::~threadParam()
     delete info;
   }
   
-  event_base_loopbreak(ev);
-  // retval.get();
+  event_base_loopbreak(ev); // why can't exit ???
+  // retval.get(); 
 
   evhttp_free(ev_listen);
   event_base_free(ev);
