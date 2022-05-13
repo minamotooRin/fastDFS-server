@@ -3,13 +3,31 @@
 fileCacheProxy::Garbo fileCacheProxy::m_garbo;
 fileCacheProxy *fileCacheProxy::_Instance = new fileCacheProxy();
 
+void invoke_httpd_handler(struct evhttp_request *req, void *arg)
+{
+  fileCacheProxy::getInstance()->httpd_handler(req, arg);
+}
+void invoke_fileinfo_handler(struct evhttp_request *req, void *arg)
+{
+  fileCacheProxy::getInstance()->fileinfo_handler(req, arg);
+}
+void invoke_upload_handler(struct evhttp_request *req, void *arg)
+{
+  fileCacheProxy::getInstance()->upload_handler(req, arg);
+}
+void invoke_delete_handler(struct evhttp_request *req, void *arg)
+{
+  fileCacheProxy::getInstance()->delete_handler(req, arg);
+}
+
 fileCacheProxy::fileCacheProxy()
 {
   isReady = false;
 
-  mPath2Handle["/fileinfo"] = fileinfo_handler;
-  mPath2Handle["/upload"]   = upload_handler;
-  mPath2Handle["/delete"]   = delete_handler;
+  mPath2Handle["/"]         = invoke_httpd_handler;
+  mPath2Handle["/fileinfo"] = invoke_fileinfo_handler;
+  mPath2Handle["/upload"]   = invoke_upload_handler;
+  mPath2Handle["/delete"]   = invoke_delete_handler;
   
 }
 
@@ -85,9 +103,7 @@ int fileCacheProxy::init()
   m_fc_rotating_logger->flush_on(spdlog::level::info);
   SPDLOG_LOGGER_INFO(m_fc_rotating_logger, "LOGGER INITIALIZED.");
 
-  m_process_rotating_logger = spdlog::rotating_logger_mt(PROCESS_LOGGER_NAME, mProclogFile.c_str(), 1024 * 1024 * logFileSize, logFileBkupNum); \
-  m_process_rotating_logger->flush_on(spdlog::level::info);
-  SPDLOG_LOGGER_INFO(m_process_rotating_logger, "LOGGER INITIALIZED.");
+  fFileID = std::ofstream(mProclogFile);
 
   /*=======================================
 
@@ -282,7 +298,7 @@ int fileCacheProxy::startService(void)
     
     threadParams.push_back(cbParam);
 
-    evhttp_set_gencb(ev_listen, httpd_handler, cbParam);
+    evhttp_set_gencb(ev_listen, static_cast<cb>(mPath2Handle["/"]), cbParam);
     for(auto &it : mPath2Handle)
     {
       evhttp_set_cb(ev_listen, it.first.c_str(), it.second, cbParam);
@@ -306,6 +322,7 @@ void fileCacheProxy::httpd_handler(struct evhttp_request * req, void * arg)
   evhttp_send_reply(req, HTTP_400, "Bad Request", nullptr);
   return ;
 }
+
 void fileCacheProxy::upload_handler(struct evhttp_request * req, void * arg)
 {
   // Process header 
@@ -373,8 +390,12 @@ void fileCacheProxy::upload_handler(struct evhttp_request * req, void * arg)
   evhttp_send_reply(req, HTTP_200, "OK", resp_body);
   evbuffer_free(resp_body);
 
+  // Recording
+  fFileID << j_str << std::endl;
+
   return ;
 }
+
 void fileCacheProxy::delete_handler(struct evhttp_request * req, void * arg)
 {
   struct evkeyvalq *headers = evhttp_request_get_input_headers(req);

@@ -50,6 +50,13 @@ public:
     int init();
     int startService(void);
     int signal_handle(unsigned int signum);
+    
+    // using CB = std::function<void(struct evhttp_request *, void *)>; 
+    std::map<std::string, cb> mPath2Handle;
+    void httpd_handler(struct evhttp_request * req, void * arg);
+    void upload_handler(struct evhttp_request * req, void * arg);
+    void delete_handler(struct evhttp_request * req, void * arg);
+    void fileinfo_handler(struct evhttp_request * req, void * arg);
 
 private:
 
@@ -70,11 +77,6 @@ private:
 
     fileCacheProxy();
     static fileCacheProxy *_Instance;
-    
-    static void httpd_handler(struct evhttp_request * req, void * arg);
-    static void upload_handler(struct evhttp_request * req, void * arg);
-    static void delete_handler(struct evhttp_request * req, void * arg);
-    static void fileinfo_handler(struct evhttp_request * req, void * arg);
 
     static constexpr int PRIVILEAGE_644 = (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
@@ -92,7 +94,6 @@ private:
     char mWorkDir[PATH_LEN];
 
     int listenfd;
-    std::map<std::string, cb> mPath2Handle;
 
     std::threadpool *mThreadPool;
     std::vector<threadParam *> threadParams;
@@ -102,10 +103,10 @@ private:
     std::string mFclogFile;
     std::shared_ptr<spdlog::logger> m_fc_rotating_logger;
 
-    // FDFS logger
+    // FileID recoder
     std::string mRecordDir;
     std::string mProclogFile;
-    std::shared_ptr<spdlog::logger> m_process_rotating_logger;
+    std::ofstream fFileID;
 
     // Load from config
     std::string localhost;

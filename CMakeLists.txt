@@ -24,6 +24,7 @@ link_directories(
 )
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC_LIST)
+list(REMOVE_ITEM SRC_LIST "${CMAKE_CURRENT_SOURCE_DIR}/src/expireCleaner.cpp")
 add_executable(main
     ${SRC_LIST}
 )
