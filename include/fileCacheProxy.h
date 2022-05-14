@@ -28,6 +28,12 @@
 #include "common.h"
 #include "thread_pool.h"
 
+#define INVOEKE_FUNC( NAME ) \
+    static void invoke_##NAME(struct evhttp_request *req, void *arg) \
+    { \
+        getInstance()->NAME(req, arg); \
+    }
+
 typedef void (*cb)(struct evhttp_request *, void *);
 
 class fileCacheProxy
@@ -50,13 +56,11 @@ public:
     int init();
     int startService(void);
     int signal_handle(unsigned int signum);
-    
-    // using CB = std::function<void(struct evhttp_request *, void *)>; 
-    std::map<std::string, cb> mPath2Handle;
-    void httpd_handler(struct evhttp_request * req, void * arg);
-    void upload_handler(struct evhttp_request * req, void * arg);
-    void delete_handler(struct evhttp_request * req, void * arg);
-    void fileinfo_handler(struct evhttp_request * req, void * arg);
+
+    INVOEKE_FUNC(httpd_handler);
+    INVOEKE_FUNC(fileinfo_handler);
+    INVOEKE_FUNC(upload_handler);
+    INVOEKE_FUNC(delete_handler);
 
 private:
 
@@ -88,6 +92,13 @@ private:
 
     static constexpr int MAX_CONNECTION_TEST = 16;
     static constexpr int MAX_FDFSMetaData_CNT = 32;
+    
+    // using CB = std::function<void(struct evhttp_request *, void *)>; 
+    std::map<std::string, cb> mPath2Handle;
+    void httpd_handler(struct evhttp_request * req, void * arg);
+    void upload_handler(struct evhttp_request * req, void * arg);
+    void delete_handler(struct evhttp_request * req, void * arg);
+    void fileinfo_handler(struct evhttp_request * req, void * arg);
 
     int isReady;
     pid_t pid;

@@ -3,23 +3,6 @@
 fileCacheProxy::Garbo fileCacheProxy::m_garbo;
 fileCacheProxy *fileCacheProxy::_Instance = new fileCacheProxy();
 
-void invoke_httpd_handler(struct evhttp_request *req, void *arg)
-{
-  fileCacheProxy::getInstance()->httpd_handler(req, arg);
-}
-void invoke_fileinfo_handler(struct evhttp_request *req, void *arg)
-{
-  fileCacheProxy::getInstance()->fileinfo_handler(req, arg);
-}
-void invoke_upload_handler(struct evhttp_request *req, void *arg)
-{
-  fileCacheProxy::getInstance()->upload_handler(req, arg);
-}
-void invoke_delete_handler(struct evhttp_request *req, void *arg)
-{
-  fileCacheProxy::getInstance()->delete_handler(req, arg);
-}
-
 fileCacheProxy::fileCacheProxy()
 {
   isReady = false;
