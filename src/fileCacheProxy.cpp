@@ -7,10 +7,10 @@ fileCacheProxy::fileCacheProxy()
 {
   isReady = false;
 
-  mPath2Handle["/"]         = invoke_httpd_handler;
-  mPath2Handle["/fileinfo"] = invoke_fileinfo_handler;
-  mPath2Handle["/upload"]   = invoke_upload_handler;
-  mPath2Handle["/delete"]   = invoke_delete_handler;
+  mPath2Handle["/"]         = INVOEKED_FUNC(httpd_handler);
+  mPath2Handle["/fileinfo"] = INVOEKED_FUNC(fileinfo_handler);
+  mPath2Handle["/upload"]   = INVOEKED_FUNC(upload_handler);
+  mPath2Handle["/delete"]   = INVOEKED_FUNC(delete_handler);
   
 }
 

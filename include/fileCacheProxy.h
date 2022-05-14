@@ -33,6 +33,7 @@
     { \
         getInstance()->NAME(req, arg); \
     }
+#define INVOEKED_FUNC(NAME) (invoke_##NAME)
 
 typedef void (*cb)(struct evhttp_request *, void *);
 
