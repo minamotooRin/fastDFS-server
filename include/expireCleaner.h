@@ -1,29 +1,19 @@
+/**
+* Copyright (C) 2008 Happy Fish / YuQing
+*
+* FastDFS may be copied only under the terms of the GNU General
+* Public License V3, which may be found in the FastDFS source kit.
+* Please visit the FastDFS Home Page http://www.fastken.com/ for more detail.
+**/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <sys/time.h>
+#include <string.h>
 #include <errno.h>
-#include <unistd.h>
+#include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include "fdfs_client.h"
+#include "fastcommon/logger.h"
 
-#include "fastdfs/client_func.h"
-#include "fastdfs/fdfs_global.h"
-#include "fastdfs/fdfs_client.h"
-
-#define PROCESS_COUNT	10
-
-typedef struct {
-	int file_type;  //index
-	char *file_id;
-} FileEntry;
-
-typedef struct {
-	int bytes;  //file size
-	char *filename;
-	int count;   //total file count
-	int delete_count;
-	int success_count;  //success upload count
-	int64_t time_used;  //unit: ms
-} TestFileInfo;
+#define ID_LEN 128

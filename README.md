@@ -17,6 +17,6 @@ nohup ./build/main 2>&1 &
 
 ## TO DO
 
-- Recording receiving time, current Code is ugly.
-- batch deleting file.
+- Recording receiving time. TB test
+- batch deleting file. TB test
 - when fdfs is logging, buffer overflow will be detected.
