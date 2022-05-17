@@ -29,6 +29,10 @@ add_executable(main
     ${SRC_LIST}
 )
 
+add_executable(fdfs_batch_delete
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/expireCleaner.cpp
+)
+
 IF (WIN32)
 	MESSAGE(STATUS "Now is windows")
 ELSEIF (APPLE)
@@ -39,3 +43,4 @@ ELSEIF (UNIX)
 ENDIF ()
 
 target_link_libraries(main fdfsclient fastcommon event)
+target_link_libraries(fdfs_batch_delete fdfsclient fastcommon)
