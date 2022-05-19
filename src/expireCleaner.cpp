@@ -30,10 +30,10 @@ int main(int argc, char *argv[])
 		return errno != 0 ? errno : ECONNREFUSED;
 	}
 
-	FILE * fp = fopen( argv[2] , 'r');
+	FILE * fp = fopen(argv[2], "r");
 	if( fp == NULL )
 	{
-		printf("Cannot open %s.\n", argv[2);
+		printf("Cannot open %s.\n", argv[2]);
 		return 0;
 	}
 

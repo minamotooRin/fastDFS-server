@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "fdfs_client.h"
+#include "fastdfs/fdfs_client.h"
 #include "fastcommon/logger.h"
 
 #define ID_LEN 128
