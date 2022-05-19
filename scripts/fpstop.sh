@@ -13,7 +13,7 @@ pid_filecacheproxy=`pidof filecacheproxy`
 
 
 if [ "$pid_fpmoni" ] ; then
-    kill -9 $pid_fpmoni
+    kill $pid_fpmoni
     timestamp=`date +"%Y/%m/%d %H:%M:%S"`
     echo "fpmoni.sh killed, pid[$pid_fpmoni]"
     echo "$timestamp   fpmoni.sh killed by fpstop.sh"   >> $workdir/log/process.log
@@ -21,7 +21,7 @@ fi
 
 
 if [ "$pid_filecacheproxy" ] ; then
-    kill -9 $pid_filecacheproxy
+    kill $pid_filecacheproxy
     timestamp=`date +"%Y/%m/%d %H:%M:%S"`
     echo "filecacheproxy killed, pid[$pid_filecacheproxy]"
     echo "$timestamp   filecacheproxy killed by fpstop.sh"  >>$workdir/log/process.log

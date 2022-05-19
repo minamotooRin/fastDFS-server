@@ -10,8 +10,8 @@ do
         timestamp=`date +"%Y/%m/%d %H:%M:%S"`
         echo "$timestamp   Filecacheproxy is not running, Restart it ....." >> ${workdir}/log/process.log
         cd ${workdir}
-        nohup ${workdir}/filecacheproxy &
-        cd ..
+        nohup ${workdir}/filecacheproxy ２>&１>> ${workdir}/log/process.log　&
+        cd -
     fi
     sleep 10
 done

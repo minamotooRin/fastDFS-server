@@ -44,6 +44,10 @@ int main(int argc, char *argv[])
 				"error no: %d, error info: %s\n", \
 				file_id, result, STRERROR(result));
 		}
+		else
+		{
+			printf("delete file: %s success.\n", file_id);
+		}
 	}
 
 	tracker_close_connection_ex(pTrackerServer, true);
