@@ -16,4 +16,6 @@
 #include "fastdfs/fdfs_client.h"
 #include "fastcommon/logger.h"
 
+#include "configReader.h"
+
 #define ID_LEN 128

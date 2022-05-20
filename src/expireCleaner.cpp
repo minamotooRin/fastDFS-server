@@ -2,7 +2,6 @@
 
 int main(int argc, char *argv[])
 {
-	char *conf_filename;
 	ConnectionInfo *pTrackerServer;
 	int result;
 	char file_id[ID_LEN];
@@ -17,8 +16,15 @@ int main(int argc, char *argv[])
 	g_log_context.log_level = LOG_ERR;
 	ignore_signal_pipe();
 
-	conf_filename = argv[1];
-	if ((result=fdfs_client_init(conf_filename)) != 0)
+	Config conf(argv[1]);
+	if(conf.Load() != 0 )
+	{
+		printf("Cannot open %s.\n", argv[1]);
+		return 0;
+	}
+
+	std::string conf_filename = conf.getValue("clientConfPath");
+	if ((result=fdfs_client_init(conf_filename.c_str())) != 0)
 	{
 		return result;
 	}

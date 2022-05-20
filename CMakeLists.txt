@@ -31,6 +31,7 @@ add_executable(main
 
 add_executable(fdfs_batch_delete
     ${CMAKE_CURRENT_SOURCE_DIR}/src/expireCleaner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/configReader.cpp
 )
 
 IF (WIN32)
