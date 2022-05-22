@@ -10,10 +10,12 @@ Before running FileCacheProxy, you should deploy your fastDFS properly, and modi
 
 ## Usage
 
-Just execute the compiling result `main`, or using `nohup`:
+After modifying configuration in `fileCacheProxy.conf`, just execute the compiling result `main`, or using `nohup`:
 ```
 nohup ./build/main 2>&1 &
 ```
+
+Scripts in `scripts/` include monitor, killer and expired file cleaner.
 
 ## TO DO
 
